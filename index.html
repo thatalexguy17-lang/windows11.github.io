@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Windows 11 Desktop</title>
+  <style>
+    :root {
+      --line: rgba(255,255,255,0.2);
+      --text: #eef4ff;
+      --panel: rgba(16, 24, 40, 0.82);
+      --window: rgba(14, 24, 42, 0.84);
+      --accent: #69a7ff;
+    }
+    * { box-sizing: border-box; margin: 0; font-family: "Segoe UI", system-ui, sans-serif; }
+    body { color: var(--text); overflow: hidden; }
+    .hidden { display: none !important; }
+
+    .desktop {
+      min-height: 100vh;
+      position: relative;
+      background:
+        radial-gradient(circle at 52% 63%, rgba(56, 167, 255, 0.62) 0%, rgba(11, 31, 110, 0.9) 39%, rgba(6, 10, 32, 0.95) 64%),
+        radial-gradient(circle at 74% 82%, rgba(251, 0, 255, 0.35), transparent 35%),
+        radial-gradient(circle at 18% 44%, rgba(22, 161, 236, 0.27), transparent 30%),
+        #020617;
+    }
+
+    .orb {
+      position: absolute;
+      left: 50%; top: 53%; transform: translate(-50%, -50%);
+      width: min(60vw, 980px); aspect-ratio: 1; border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(80,255,255,0.25), transparent 50%),
+        radial-gradient(circle at 65% 70%, rgba(0,120,255,0.8), rgba(0,18,127,0.85));
+      box-shadow:
+        0 0 120px rgba(0,145,255,0.32),
+        0 45px 90px rgba(0,0,0,0.6),
+        inset 0 -18px 40px rgba(255, 90, 255, 0.48),
+        inset 0 14px 40px rgba(0, 255, 255, 0.18);
+      pointer-events: none;
+      filter: saturate(1.2);
+    }
+
+    .icons {
+      position: absolute; left: 0.6rem; top: 0.6rem;
+      display: grid; gap: 0.28rem; z-index: 4;
+    }
+    .icon {
+      width: 4.8rem; min-height: 5rem; border: 1px solid transparent; border-radius: 0.5rem;
+      background: transparent; color: #f8fbff; text-align: center;
+      display: grid; justify-items: center; align-content: center; gap: 0.22rem;
+      font-size: 0.74rem; line-height: 1.15; cursor: pointer;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    }
+    .icon .emoji { font-size: 1.9rem; }
+    .icon:hover { background: rgba(255,255,255,0.09); border-color: var(--line); }
+
+    .window-layer { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
+    .window { pointer-events: auto; }
+    .window {
+      position: absolute;
+      width: min(760px, 92vw);
+      height: min(500px, 74vh);
+      min-width: 360px; min-height: 220px;
+      border: 1px solid var(--line);
+      border-radius: 0.9rem;
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+      background: var(--window);
+      box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+    }
+    .titlebar {
+      height: 2.4rem; display: flex; justify-content: space-between; align-items: center;
+      padding: 0 0.65rem; background: rgba(255,255,255,0.08); cursor: move;
+    }
+    .titlebar .title { display: flex; gap: .45rem; align-items: center; font-weight: 600; }
+    .controls { display: flex; gap: .32rem; }
+    .controls button {
+      width: 1.8rem; height: 1.42rem; border: 0; border-radius: .35rem;
+      background: rgba(255,255,255,.14); color: var(--text); cursor: pointer;
+    }
+    .controls .close:hover { background: #ef4444; }
+    .content { height: calc(100% - 2.4rem); overflow: auto; padding: .7rem; }
+
+    .panel {
+      position: absolute;
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 60px rgba(0,0,0,.45);
+      z-index: 12;
+    }
+
+    .start-menu {
+      left: 50%; transform: translateX(-50%);
+      bottom: 3.75rem;
+      width: min(46rem, 96vw);
+      height: min(31rem, 82vh);
+      padding: .9rem;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: .6rem;
+    }
+    .start-search {
+      width: 100%; border-radius: .5rem; border: 1px solid var(--line);
+      background: rgba(255,255,255,.1); color: var(--text); padding: .48rem;
+    }
+    .app-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: .45rem; overflow: auto;
+    }
+    .app-grid button {
+      border: 1px solid transparent; border-radius: .55rem;
+      background: rgba(255,255,255,.09); color: var(--text); padding: .45rem; text-align: left; cursor: pointer;
+    }
+    .app-grid button:hover { border-color: var(--line); }
+
+    .quick {
+      right: .7rem; bottom: 3.75rem; width: min(19rem, 94vw); padding: .75rem;
+    }
+
+    .taskbar {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 3.35rem;
+      background: linear-gradient(90deg, rgba(28,40,58,0.74), rgba(39,52,72,0.58));
+      border-top: 1px solid rgba(255,255,255,0.25);
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(18px);
+      z-index: 16;
+    }
+
+    .task-center {
+      display: flex; align-items: center; gap: 0.34rem;
+      background: rgba(14, 22, 35, 0.45);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 999px; padding: 0.2rem 0.5rem;
+    }
+    .task-icon {
+      width: 2rem; height: 2rem; border: 1px solid transparent; border-radius: .45rem;
+      background: rgba(255,255,255,.08); color: var(--text); cursor: pointer; font-size: 1rem;
+      position: relative;
+    }
+    .task-icon.running::after{
+      content:""; position:absolute; left:50%; transform:translateX(-50%);
+      bottom:2px; width:10px; height:2px; border-radius:3px; background:var(--accent);
+    }
+    .task-icon:hover { border-color: var(--line); }
+
+    .weather {
+      position: absolute; left: 0.55rem; bottom: 0.4rem;
+      display: flex; align-items: center; gap: 0.36rem;
+      font-size: 0.8rem; color: #ecf4ff; text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .clock {
+      position: absolute; right: 0.65rem; bottom: 0.37rem;
+      text-align: right; font-size: 0.8rem; line-height: 1.2;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+
+
+    .mc-wrap {
+      background: linear-gradient(180deg, #1b2a3f, #111827);
+      border: 1px solid var(--line);
+      border-radius: .55rem;
+      padding: .55rem;
+    }
+    .mc-toolbar { display:flex; gap:.35rem; margin-bottom:.45rem; flex-wrap:wrap; }
+    .mc-btn { border:1px solid rgba(255,255,255,.18); background:#253247; color:#f8f8f8; border-radius:.35rem; padding:.26rem .5rem; cursor:pointer; }
+    .mc-btn.active { outline:2px solid #8ec5ff; }
+    #mc3dCanvas { width:100%; height:300px; background:#87ceeb; border-radius:.4rem; image-rendering: pixelated; cursor:grab; display:block; }
+    #mcMiniMap { width:160px; height:160px; border-radius:.35rem; border:1px solid rgba(255,255,255,.2); background:#0f172a; image-rendering: pixelated; }
+    .mc-hud { display:flex; justify-content:space-between; align-items:flex-start; gap:.6rem; margin-top:.45rem; }
+    .mc-log { margin-top:.2rem; font-size:.8rem; color:#e6f2ff; }
+
+    .row { display:flex; gap:.45rem; align-items:center; flex-wrap:wrap; }
+    .card { border:1px solid var(--line); border-radius:.55rem; padding:.55rem; background:rgba(255,255,255,.06); margin-bottom:.5rem; }
+    .input, textarea { width:100%; border:1px solid var(--line); border-radius:.4rem; background:rgba(0,0,0,.35); color:var(--text); padding:.4rem; }
+    textarea { min-height: 180px; }
+    .btn { border:1px solid transparent; border-radius:.4rem; background:rgba(255,255,255,.12); color:var(--text); padding:.35rem .55rem; cursor:pointer; }
+    .btn:hover { border-color: var(--line); }
+    .calc { display:grid; grid-template-columns:repeat(4,1fr); gap:.35rem; }
+  </style>
+</head>
+<body>
+  <main class="desktop" id="desktop">
+    <div class="orb" aria-hidden="true"></div>
+
+    <aside class="icons">
+      <button class="icon" data-open="Recycle Bin"><span class="emoji">🗑️</span><span>Recycle Bin</span></button>
+      <button class="icon" data-open="Google Chrome"><span class="emoji">🌐</span><span>Google<br>Chrome</span></button>
+      <button class="icon" data-open="Microsoft Edge"><span class="emoji">🌀</span><span>Microsoft<br>Edge</span></button>
+      <button class="icon" data-open="Jitsi Meet"><span class="emoji">📹</span><span>Jitsi Meet</span></button>
+      <button class="icon" data-open="Notepad"><span class="emoji">📝</span><span>Notepad</span></button>
+      <button class="icon" data-open="File Explorer"><span class="emoji">📁</span><span>Explorer</span></button>
+      <button class="icon" data-open="Minecraft"><span class="emoji">🧱</span><span>Minecraft</span></button>
+    </aside>
+
+    <section class="window-layer" id="windowLayer"></section>
+
+    <section class="panel start-menu hidden" id="startMenu">
+      <input id="startSearch" class="start-search" placeholder="Search" />
+      <div class="app-grid" id="appGrid"></div>
+    </section>
+
+    <section class="panel quick hidden" id="quickPanel">
+      <h3>Quick Settings</h3>
+      <div class="row" style="margin-top:.45rem">
+        <button class="btn">📶 Wi‑Fi</button>
+        <button class="btn">🟦 Bluetooth</button>
+        <button class="btn">🌙 Night light</button>
+        <button class="btn">🔔 Focus</button>
+      </div>
+      <label style="display:block;margin-top:.55rem">Brightness <input type="range" min="0" max="100" value="75"/></label>
+      <label style="display:block;margin-top:.55rem">Volume <input type="range" min="0" max="100" value="35"/></label>
+    </section>
+
+    <footer class="taskbar">
+      <div class="weather">🌤️ <span>31°F<br>Partly cloudy</span></div>
+
+      <div class="task-center">
+        <button class="task-icon" id="startBtn" title="Start">⊞</button>
+        <button class="task-icon" data-open="Search" title="Search">🔍</button>
+        <button class="task-icon" data-open="File Explorer" title="Explorer">📁</button>
+        <button class="task-icon" data-open="Mail" title="Mail">📨</button>
+        <button class="task-icon" data-open="Microsoft Store" title="Store">🛍️</button>
+        <button class="task-icon" data-open="Microsoft Edge" title="Edge">🌐</button>
+        <button class="task-icon" data-open="Terminal" title="Terminal">💻</button>
+        <button class="task-icon" data-open="Notepad" title="Notepad">📝</button>
+        <button class="task-icon" data-open="Minecraft" title="Minecraft">🧱</button>
+      </div>
+
+      <div class="clock" id="clock"></div>
+    </footer>
+  </main>
+
+  <script>
+    const APPS = [
+      'File Explorer','Microsoft Edge','Notepad','Terminal','Calculator','Settings','Mail','Microsoft Store','Photos','Weather',
+      'Calendar','Clock','Paint','Task Manager','Jitsi Meet','Google Chrome','Recycle Bin','Search','Minecraft'
+    ];
+
+    const notesKey = 'win11_note';
+    const todosKey = 'win11_todos';
+
+    const desktop = document.getElementById('desktop');
+    const windowLayer = document.getElementById('windowLayer');
+    const startBtn = document.getElementById('startBtn');
+    const startMenu = document.getElementById('startMenu');
+    const quickPanel = document.getElementById('quickPanel');
+    const appGrid = document.getElementById('appGrid');
+    const startSearch = document.getElementById('startSearch');
+    const clock = document.getElementById('clock');
+
+    let z = 20;
+
+    function updateClock() {
+      const now = new Date();
+      clock.innerHTML = `${now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}<br>${now.toLocaleDateString()}`;
+    }
+
+    function renderStart(query = '') {
+      const q = query.toLowerCase().trim();
+      appGrid.innerHTML = '';
+      APPS.filter((a) => a.toLowerCase().includes(q)).forEach((name) => {
+        const b = document.createElement('button');
+        b.textContent = name;
+        b.onclick = () => openApp(name);
+        appGrid.appendChild(b);
+      });
+    }
+
+    function markTaskRunning() {
+      const open = new Set([...windowLayer.querySelectorAll('.window')].map((w) => w.dataset.app));
+      document.querySelectorAll('.task-icon[data-open]').forEach((btn) => btn.classList.toggle('running', open.has(btn.dataset.open)));
+    }
+
+    function dragWindow(win) {
+      const bar = win.querySelector('.titlebar');
+      let dragging = false, ox = 0, oy = 0;
+      bar.addEventListener('mousedown', (e) => {
+        dragging = true;
+        const r = win.getBoundingClientRect();
+        ox = e.clientX - r.left;
+        oy = e.clientY - r.top;
+        bringFront(win);
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        const maxX = window.innerWidth - win.offsetWidth;
+        const maxY = window.innerHeight - win.offsetHeight - 58;
+        win.style.left = `${Math.min(Math.max(0, e.clientX - ox), Math.max(maxX,0))}px`;
+        win.style.top = `${Math.min(Math.max(0, e.clientY - oy), Math.max(maxY,0))}px`;
+      });
+      document.addEventListener('mouseup', () => dragging = false);
+    }
+
+    function bringFront(win) { z += 1; win.style.zIndex = z; }
+
+    function closeWindow(win) { win.remove(); markTaskRunning(); }
+
+    function appHTML(name) {
+      if (name === 'Notepad') return `<div class='card'><textarea id='noteArea' placeholder='Type here...'></textarea><div class='row' style='margin-top:.45rem'><button class='btn' id='saveNote'>Save</button><button class='btn' id='downNote'>Download</button></div></div>`;
+      if (name === 'Calculator') return `<div class='card'><input id='calcDisp' class='input' value='0' readonly /><div class='calc' id='calcGrid' style='margin-top:.45rem'></div></div>`;
+      if (name === 'Terminal') return `<div class='card'><pre id='termOut'>Terminal ready.\nType help.</pre><div class='row'><span>></span><input id='termIn' class='input' /></div></div>`;
+      if (name === 'Task Manager') return `<div class='card'><button class='btn' id='taskRefresh'>Refresh</button><ul id='taskList' style='margin-top:.45rem;padding-left:1rem'></ul></div>`;
+      if (name === 'Weather') return `<div class='card'><div class='row'><input id='lat' class='input' value='40.71'><input id='lon' class='input' value='-74.00'><button class='btn' id='weatherBtn'>Load</button></div><p id='weatherTxt' style='margin-top:.45rem'>No data.</p></div>`;
+      if (name === 'Minecraft') return `<div class='mc-wrap'><div class='mc-toolbar'><button class='mc-btn' id='mcPause'>Pause</button><button class='mc-btn' id='mcDayNight'>Day/Night</button><button class='mc-btn' id='mcReset'>Reset World</button><button class='mc-btn'>WASD</button><button class='mc-btn'>Space Jump</button><button class='mc-btn'>Shift Sprint</button></div><canvas id='mc3dCanvas' width='960' height='460'></canvas><div class='mc-hud'><div><p class='mc-log' id='mcLog'>First-person block world (original, no official assets). Click canvas + drag to look.</p><p class='mc-log' id='mcStats'>Speed: 0 | Coins: 0</p></div><canvas id='mcMiniMap' width='160' height='160'></canvas></div></div>`;
+      return `<div class='card'><h3>${name}</h3><p>This app opens and works as a mock window in this desktop.</p></div>`;
+    }
+
+    function wireApp(name, root) {
+      if (name === 'Notepad') {
+        const area = root.querySelector('#noteArea');
+        area.value = localStorage.getItem(notesKey) || '';
+        root.querySelector('#saveNote').onclick = () => localStorage.setItem(notesKey, area.value);
+        root.querySelector('#downNote').onclick = () => {
+          const blob = new Blob([area.value], {type:'text/plain'});
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob); a.download = 'note.txt'; a.click();
+          URL.revokeObjectURL(a.href);
+        };
+      }
+
+      if (name === 'Calculator') {
+        const keys = ['7','8','9','/','4','5','6','*','1','2','3','-','0','.','=','+','C'];
+        const disp = root.querySelector('#calcDisp');
+        const grid = root.querySelector('#calcGrid');
+        keys.forEach((k) => {
+          const b = document.createElement('button'); b.className='btn'; b.textContent=k;
+          b.onclick = () => {
+            if (k === 'C') { disp.value = '0'; return; }
+            if (k === '=') { try { disp.value = String(Function(`return (${disp.value})`)()); } catch { disp.value = 'Error'; } return; }
+            disp.value = disp.value === '0' ? k : disp.value + k;
+          };
+          grid.appendChild(b);
+        });
+      }
+
+      if (name === 'Terminal') {
+        const out = root.querySelector('#termOut');
+        const input = root.querySelector('#termIn');
+        input.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter') return;
+          const cmd = input.value.trim();
+          if (!cmd) return;
+          let res = '';
+          if (cmd === 'help') res = 'help, date, clear, echo <text>';
+          else if (cmd === 'date') res = new Date().toString();
+          else if (cmd.startsWith('echo ')) res = cmd.slice(5);
+          else if (cmd === 'clear') { out.textContent=''; input.value=''; return; }
+          else res = `'${cmd}' is not recognized`;
+          out.textContent += `\n> ${cmd}\n${res}`;
+          input.value = '';
+        });
+      }
+
+      if (name === 'Task Manager') {
+        const list = root.querySelector('#taskList');
+        const render = () => {
+          list.innerHTML = '';
+          [...windowLayer.querySelectorAll('.window')].forEach((w) => {
+            const li = document.createElement('li');
+            li.textContent = w.dataset.app + ' ';
+            const end = document.createElement('button'); end.className='btn'; end.textContent='End';
+            end.onclick = () => { closeWindow(w); render(); };
+            li.appendChild(end);
+            list.appendChild(li);
+          });
+        };
+        root.querySelector('#taskRefresh').onclick = render;
+        render();
+      }
+
+      if (name === 'Weather') {
+        root.querySelector('#weatherBtn').onclick = async () => {
+          const lat = root.querySelector('#lat').value;
+          const lon = root.querySelector('#lon').value;
+          const txt = root.querySelector('#weatherTxt');
+          txt.textContent = 'Loading...';
+          try {
+            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`);
+            const j = await r.json();
+            txt.textContent = `Temperature: ${j.current.temperature_2m}°C`;
+          } catch {
+            txt.textContent = 'Weather unavailable.';
+          }
+        };
+      }
+
+      if (name === 'Minecraft') {
+        const canvas = root.querySelector('#mc3dCanvas');
+        const ctx = canvas.getContext('2d');
+        const mapCanvas = root.querySelector('#mcMiniMap');
+        const mapCtx = mapCanvas.getContext('2d');
+        const log = root.querySelector('#mcLog');
+        const stats = root.querySelector('#mcStats');
+
+        const W = 24;
+        const H = 24;
+        const world = Array.from({ length: H }, (_, y) => Array.from({ length: W }, (_, x) => {
+          if (x === 0 || y === 0 || x === W - 1 || y === H - 1) return 1;
+          if ((x % 7 === 0 && y > 2) || (y % 6 === 0 && x > 2)) return 1;
+          if ((x + y) % 19 === 0) return 2; // glass-like wall
+          if ((x * y) % 41 === 0) return 3; // glowing wall
+          return 0;
+        }));
+
+        const boosts = new Set(['4,4', '12,11', '18,9']);
+        const jumpPads = new Set(['7,16', '14,5', '20,20']);
+        const coins = new Set(['5,5','6,14','11,10','13,8','19,14','9,20']);
+
+        let px = 2.5;
+        let py = 2.5;
+        let angle = 0.3;
+        let velY = 0;
+        let pz = 1.3;
+        let onGround = true;
+        let day = true;
+        let paused = false;
+        let score = 0;
+
+        const keysHeld = new Set();
+        let dragging = false;
+        let lastX = 0;
+        const gravity = -22;
+        const jumpV = 9;
+
+        function wallColor(t, dist, side) {
+          const shade = Math.max(0.18, 1 - dist / 14);
+          const base = t === 2 ? [180, 220, 255] : t === 3 ? [180, 140, 255] : [122, 98, 72];
+          const sideMul = side ? 0.78 : 1;
+          return `rgb(${base.map(v => Math.floor(v * shade * sideMul)).join(',')})`;
+        }
+
+        function cell(x, y) {
+          if (x < 0 || y < 0 || x >= W || y >= H) return 1;
+          return world[y][x];
+        }
+
+        function collide(nx, ny) {
+          return cell(Math.floor(nx), Math.floor(ny)) !== 0;
+        }
+
+        function castRay(rayAngle) {
+          const sin = Math.sin(rayAngle);
+          const cos = Math.cos(rayAngle);
+          let d = 0;
+          let side = 0;
+          while (d < 24) {
+            d += 0.03;
+            const rx = px + cos * d;
+            const ry = py + sin * d;
+            const t = cell(Math.floor(rx), Math.floor(ry));
+            if (t) {
+              const fx = rx - Math.floor(rx);
+              const fy = ry - Math.floor(ry);
+              side = (fx < 0.08 || fx > 0.92) ? 1 : 0;
+              return { d, t, side };
+            }
+          }
+          return { d: 24, t: 0, side: 0 };
+        }
+
+        function draw3D() {
+          const w = canvas.width;
+          const h = canvas.height;
+          ctx.clearRect(0, 0, w, h);
+
+          const skyTop = day ? '#8fd3ff' : '#0b1025';
+          const skyBottom = day ? '#5da8ee' : '#1f2a4a';
+          const g = ctx.createLinearGradient(0, 0, 0, h/2);
+          g.addColorStop(0, skyTop);
+          g.addColorStop(1, skyBottom);
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, w, h/2);
+
+          const ground = ctx.createLinearGradient(0, h/2, 0, h);
+          ground.addColorStop(0, day ? '#4e7c3d' : '#2a3c2a');
+          ground.addColorStop(1, day ? '#4a3a28' : '#1f1813');
+          ctx.fillStyle = ground;
+          ctx.fillRect(0, h/2, w, h/2);
+
+          const fov = Math.PI / 3;
+          for (let x = 0; x < w; x++) {
+            const rayAngle = angle - fov / 2 + (x / w) * fov;
+            const hit = castRay(rayAngle);
+            const corrected = hit.d * Math.cos(rayAngle - angle);
+            const wallH = Math.min(h, (h * 0.9) / Math.max(corrected, 0.0001));
+            const yTop = h/2 - wallH/2 - (pz - 1.3) * 38;
+            ctx.fillStyle = hit.t ? wallColor(hit.t, corrected, hit.side) : 'transparent';
+            ctx.fillRect(x, yTop, 1.2, wallH);
+
+            if (hit.t === 3) {
+              ctx.fillStyle = `rgba(170,120,255,${Math.max(0.03, 0.18 - corrected/120)})`;
+              ctx.fillRect(x, yTop - 4, 1.2, wallH + 8);
+            }
+          }
+
+          // crosshair
+          ctx.strokeStyle = '#ffffff';
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          ctx.moveTo(w/2 - 8, h/2); ctx.lineTo(w/2 + 8, h/2);
+          ctx.moveTo(w/2, h/2 - 8); ctx.lineTo(w/2, h/2 + 8);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+
+        function drawMiniMap() {
+          mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height);
+          const cw = mapCanvas.width / W;
+          const ch = mapCanvas.height / H;
+          for (let y=0; y<H; y++) {
+            for (let x=0; x<W; x++) {
+              const t = world[y][x];
+              mapCtx.fillStyle = t===0 ? '#2e3b52' : t===1 ? '#8a6b4a' : t===2 ? '#8ad1ff' : '#b691ff';
+              mapCtx.fillRect(x*cw, y*ch, cw, ch);
+            }
+          }
+          boosts.forEach((k)=>{ const [x,y]=k.split(',').map(Number); mapCtx.fillStyle='#22c55e'; mapCtx.fillRect(x*cw,y*ch,cw,ch); });
+          jumpPads.forEach((k)=>{ const [x,y]=k.split(',').map(Number); mapCtx.fillStyle='#f59e0b'; mapCtx.fillRect(x*cw,y*ch,cw,ch); });
+          coins.forEach((k)=>{ const [x,y]=k.split(',').map(Number); mapCtx.fillStyle='#facc15'; mapCtx.fillRect(x*cw+cw*0.25,y*ch+ch*0.25,cw*0.5,ch*0.5); });
+
+          mapCtx.fillStyle = '#ffffff';
+          mapCtx.beginPath();
+          mapCtx.arc(px*cw, py*ch, 3, 0, Math.PI*2);
+          mapCtx.fill();
+          mapCtx.strokeStyle = '#ffffff';
+          mapCtx.beginPath();
+          mapCtx.moveTo(px*cw, py*ch);
+          mapCtx.lineTo((px + Math.cos(angle)*1.2)*cw, (py + Math.sin(angle)*1.2)*ch);
+          mapCtx.stroke();
+        }
+
+        function physics(dt) {
+          const sprint = keysHeld.has('ShiftLeft') || keysHeld.has('ShiftRight');
+          let speed = sprint ? 4.4 : 2.6;
+          const cellKey = `${Math.floor(px)},${Math.floor(py)}`;
+          if (boosts.has(cellKey)) speed *= 1.6;
+
+          if (jumpPads.has(cellKey) && onGround) {
+            velY = jumpV * 1.25;
+            onGround = false;
+            log.textContent = 'Jump pad boost!';
+          }
+
+          let mx = 0, my = 0;
+          if (keysHeld.has('KeyW')) { mx += Math.cos(angle)*speed*dt; my += Math.sin(angle)*speed*dt; }
+          if (keysHeld.has('KeyS')) { mx -= Math.cos(angle)*speed*dt; my -= Math.sin(angle)*speed*dt; }
+          if (keysHeld.has('KeyA')) { mx += Math.cos(angle-Math.PI/2)*speed*dt; my += Math.sin(angle-Math.PI/2)*speed*dt; }
+          if (keysHeld.has('KeyD')) { mx += Math.cos(angle+Math.PI/2)*speed*dt; my += Math.sin(angle+Math.PI/2)*speed*dt; }
+
+          const nx = px + mx;
+          const ny = py + my;
+          if (!collide(nx, py)) px = nx;
+          if (!collide(px, ny)) py = ny;
+
+          velY += gravity * dt;
+          pz += velY * dt;
+          if (pz <= 1.3) {
+            pz = 1.3;
+            velY = 0;
+            onGround = true;
+          }
+
+          const coinKey = `${Math.floor(px)},${Math.floor(py)}`;
+          if (coins.has(coinKey)) {
+            coins.delete(coinKey);
+            score += 1;
+            log.textContent = `Collected crystal ${score}/6`;
+          }
+
+          stats.textContent = `Speed: ${speed.toFixed(1)} | Coins: ${score}/6 | Height: ${pz.toFixed(2)}`;
+        }
+
+        function resetWorld() {
+          px = 2.5; py = 2.5; angle = 0.3; velY = 0; pz = 1.3; onGround = true; score = 0;
+          coins.clear(); ['5,5','6,14','11,10','13,8','19,14','9,20'].forEach(c => coins.add(c));
+          log.textContent = 'World reset.';
+        }
+
+        root.querySelector('#mcPause').onclick = () => {
+          paused = !paused;
+          root.querySelector('#mcPause').classList.toggle('active', paused);
+          root.querySelector('#mcPause').textContent = paused ? 'Resume' : 'Pause';
+        };
+
+        root.querySelector('#mcDayNight').onclick = () => {
+          day = !day;
+          log.textContent = day ? 'Day mode.' : 'Night mode.';
+        };
+
+        root.querySelector('#mcReset').onclick = resetWorld;
+
+        canvas.addEventListener('mousedown', (e) => {
+          dragging = true;
+          lastX = e.clientX;
+          canvas.style.cursor = 'grabbing';
+        });
+        window.addEventListener('mouseup', () => { dragging = false; canvas.style.cursor='grab'; });
+        window.addEventListener('mousemove', (e) => {
+          if (!dragging) return;
+          const dx = e.clientX - lastX;
+          lastX = e.clientX;
+          angle += dx * 0.0045;
+        });
+
+        const keydown = (e) => {
+          if (!root.isConnected) return;
+          if (['KeyW','KeyA','KeyS','KeyD','Space','ShiftLeft','ShiftRight'].includes(e.code)) {
+            e.preventDefault();
+            keysHeld.add(e.code);
+            if (e.code === 'Space' && onGround) {
+              velY = jumpV;
+              onGround = false;
+            }
+          }
+        };
+        const keyup = (e) => keysHeld.delete(e.code);
+        document.addEventListener('keydown', keydown);
+        document.addEventListener('keyup', keyup);
+
+        let last = performance.now();
+        function frame(now) {
+          if (!root.isConnected) return;
+          const dt = Math.min(0.033, (now - last) / 1000);
+          last = now;
+          if (!paused) physics(dt);
+          draw3D();
+          drawMiniMap();
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+    }
+
+    function openApp(name) {
+      const win = document.createElement('section');
+      win.className = 'window';
+      win.dataset.app = name;
+      win.style.left = `${120 + Math.random()*240}px`;
+      win.style.top = `${60 + Math.random()*130}px`;
+      win.innerHTML = `
+        <header class='titlebar'>
+          <div class='title'><span>🪟</span><span>${name}</span></div>
+          <div class='controls'><button class='min'>—</button><button class='close'>✕</button></div>
+        </header>
+        <div class='content'>${appHTML(name)}</div>
+      `;
+      win.querySelector('.close').onclick = () => closeWindow(win);
+      win.querySelector('.min').onclick = () => { win.style.display = 'none'; setTimeout(() => { win.style.display=''; bringFront(win); }, 550); };
+      win.addEventListener('mousedown', () => bringFront(win));
+      windowLayer.appendChild(win);
+      dragWindow(win);
+      bringFront(win);
+      wireApp(name, win.querySelector('.content'));
+      startMenu.classList.add('hidden');
+      markTaskRunning();
+    }
+
+    startBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startMenu.classList.toggle('hidden');
+      quickPanel.classList.add('hidden');
+    });
+
+    document.getElementById('trayBtn')?.addEventListener?.('click', ()=>{});
+
+    document.querySelectorAll('[data-open]').forEach((btn) => {
+      if (btn.classList.contains('icon')) {
+        btn.addEventListener('dblclick', () => openApp(btn.dataset.open));
+      } else {
+        btn.addEventListener('click', () => openApp(btn.dataset.open));
+      }
+    });
+
+    clock.addEventListener('click', (e) => {
+      e.stopPropagation();
+      quickPanel.classList.toggle('hidden');
+      startMenu.classList.add('hidden');
+    });
+
+    startSearch.addEventListener('input', () => renderStart(startSearch.value));
+
+    desktop.addEventListener('click', (e) => {
+      if (!startMenu.contains(e.target) && e.target !== startBtn) startMenu.classList.add('hidden');
+      if (!quickPanel.contains(e.target) && e.target !== clock) quickPanel.classList.add('hidden');
+    });
+
+    updateClock();
+    setInterval(updateClock, 1000);
+    renderStart('');
+
+    openApp('File Explorer');
+  </script>
+</body>
+</html>
